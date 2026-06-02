@@ -6,8 +6,10 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Enable Corepack and prepare pnpm, then install dependencies using pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate && \
+	pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
@@ -17,7 +19,7 @@ COPY . .
 ENV NEXT_PUBLIC_GTM_ID=""
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+RUN pnpm build
 
 FROM $NODEJS_IMAGE AS runner
 WORKDIR /app
@@ -36,6 +38,9 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Fixture users and XML imports — writable at runtime (override via volume mount)
+COPY --from=builder --chown=nextjs:nodejs /app/fixtures ./fixtures
 
 USER nextjs
 

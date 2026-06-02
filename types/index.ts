@@ -37,3 +37,34 @@ export type User = {
   firstName: string;
   lastName: string;
 };
+
+export type FixtureUser = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  groups: string[];
+  roles: string[];
+  entraObjectId: string;
+  tenantId: string;
+  customClaims?: Record<string, string | string[]>;
+};
+
+export type FixturesDb = Record<string, FixtureUser>;
+
+export type Group = {
+  id: string;
+  displayName: string;
+  description?: string;
+};
+
+export type GroupsDb = Record<string, Group>;
+
+export type ImportResult = {
+  file: string;
+  email: string;
+  status: 'imported' | 'skipped';
+  reason?: string;
+  user?: FixtureUser;
+};
