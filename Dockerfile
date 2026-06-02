@@ -8,8 +8,8 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Enable Corepack and prepare pnpm, then install dependencies using pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate && \
-	pnpm install --frozen-lockfile
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate && \
+     pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
@@ -19,7 +19,8 @@ COPY . .
 ENV NEXT_PUBLIC_GTM_ID=""
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN pnpm build
+# Ensure pnpm is available in the builder stage (enable Corepack and prepare pnpm)
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate && pnpm build
 
 FROM $NODEJS_IMAGE AS runner
 WORKDIR /app

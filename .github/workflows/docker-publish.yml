@@ -1,67 +1,53 @@
-name: Build and Publish Docker
+name: Publish Docker image
 
 on:
   push:
     branches:
       - main
-      - release
     tags:
-      - 'beta-v*'
-  pull_request:
-    # Trigger only for PRs that target main branch
-    branches:
-      - main
+      - 'v*.*.*'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/sai-id
 
 jobs:
-  build-and-push-docker-image:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - run: |
-          npm install
-
-          IMAGE_PATH=boxyhq/mock-saml
-          echo "IMAGE_PATH=${IMAGE_PATH}" >> $GITHUB_OUTPUT
-          MOCK_SAML_VERSION=$(echo $(cat ./package.json) | ./node_modules/json/lib/json.js version)
-          echo "NPMVERSION=$(echo ${MOCK_SAML_VERSION})" >> $GITHUB_OUTPUT
-        id: npmversion
-
-      - name: Get short SHA
-        id: slug
-        run: echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - run: echo ${{ steps.slug.outputs.SHA7 }}
-      - run: echo ${{ steps.npmversion.outputs.NPMVERSION }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to Docker Hub
-        if: github.ref == 'refs/heads/release'
-        uses: docker/login-action@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v7
-        with:
-          context: ./
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/release' }}
-          tags: ${{ steps.npmversion.outputs.IMAGE_PATH }}:latest,${{ steps.npmversion.outputs.IMAGE_PATH }}:${{ steps.slug.outputs.SHA7 }},${{ steps.npmversion.outputs.IMAGE_PATH }}:${{ steps.npmversion.outputs.NPMVERSION }}
+      - name: Extract Docker metadata
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="latest"
+          fi
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $IMAGE_NAME:${{ steps.meta.outputs.version }} \
+            -t $IMAGE_NAME:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:${{ steps.meta.outputs.version }}
+          docker push $IMAGE_NAME:latest
