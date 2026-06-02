@@ -69,7 +69,7 @@ For example, instead of using only the root instance:
 
 ```txt
 http://localhost:4000
-````
+```
 
 You can use a namespace:
 
@@ -108,7 +108,7 @@ docker run \
   -e ENTITY_ID="https://saml.example.com/entityid" \
   -e PUBLIC_KEY="<BASE64_PUBLIC_KEY>" \
   -e PRIVATE_KEY="<BASE64_PRIVATE_KEY>" \
-  -d breder.dev/sai-id
+  -d ghcr.io/breder-dev/sai-id:latest
 ```
 
 Alternatively, you can pass an env file (for example `app.env`) instead of listing individual `-e` flags.
@@ -128,7 +128,19 @@ Then run the container using `--env-file`:
 docker run \
   -p 4000:4000 \
   --env-file ./app.env \
-  -d breder.dev/sai-id
+  -d ghcr.io/breder-dev/sai-id:latest
+```
+
+The default publication target is GitHub Container Registry (GHCR). For custom forks,
+replace `breder-dev` with your GitHub organization/user.
+
+### Docker image publishing (GitHub Actions)
+
+This repository includes a workflow that builds and publishes the container image on
+pushes to `main` and on version tags (`v*.*.*`):
+
+```txt
+.github/workflows/docker-publish.yml
 ```
 
 ---
@@ -138,7 +150,7 @@ docker run \
 Clone the repository:
 
 ```bash
-git clone https://github.com/breder-dev/sai-id.git
+git clone https://github.com/breder-dev/sai-id.git sai-id
 ```
 
 Enter the project folder:
