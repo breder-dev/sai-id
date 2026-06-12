@@ -618,7 +618,7 @@ export default function FixturesPage() {
                         type='text'
                         value={row.name}
                         onChange={(e) => setCustomRow(i, 'name', e.target.value)}
-                        className={`${inputCls} w-48 shrink-0`}
+                        className={`${inputCls} flex-1 shrink-0`}
                         placeholder='Claim name'
                       />
                       <textarea
